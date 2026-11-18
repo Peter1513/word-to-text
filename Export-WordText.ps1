@@ -422,6 +422,11 @@ process {
 }
 
 end {
+    # Windows PowerShell 5.1 run via 'powershell -File' with redirected stdin (CI, scheduled
+    # tasks, called from another program) treats stdin as pipeline input; when it is empty the
+    # process block never runs, so -Path given on the command line would be lost.
+    if ($inputs.Count -eq 0 -and $Path) { foreach ($p in $Path) { $inputs.Add($p) } }
+
     # ---- argument checks
     if ($OutDir -and $Combine) { Write-Error 'Use either -OutDir or -Combine, not both.' -ErrorAction Continue; exit 2 }
     if ($OutDir -and $Format -eq 'Json') { Write-Error '-Format Json needs -Combine (or console output).' -ErrorAction Continue; exit 2 }

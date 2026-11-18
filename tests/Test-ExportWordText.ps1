@@ -7,14 +7,20 @@ $Script = Join-Path $PSScriptRoot '..\Export-WordText.ps1' | Resolve-Path
 $Shell  = (Get-Process -Id $PID).Path          # same pwsh / powershell.exe running the tests
 $Tmp    = Join-Path ([IO.Path]::GetTempPath()) ("wt_test_" + [guid]::NewGuid())
 New-Item -ItemType Directory $Tmp | Out-Null
-$script:Failed = 0; $script:Passed = 0
+$script:Failed = 0; $script:Passed = 0; $script:LastRun = $null
 
 function Assert($cond, [string] $msg) {
     if ($cond) { $script:Passed++; Write-Host "  PASS  $msg" -ForegroundColor Green }
-    else       { $script:Failed++; Write-Host "  FAIL  $msg" -ForegroundColor Red }
+    else       { $script:Failed++; Write-Host "  FAIL  $msg" -ForegroundColor Red
+                 if ($script:LastRun) { Write-Host "        last run output:`n$($script:LastRun)" } }
 }
 function Run([string[]] $argList) {
-    $out = & $Shell -NoProfile -ExecutionPolicy Bypass -File $Script @argList 2>&1 | Out-String
+    # Windows PowerShell 5.1 turns native stderr into terminating errors under 'Stop' when
+    # redirected with 2>&1, so relax it just for the child process call.
+    $saved = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
+    try { $out = & $Shell -NoProfile -ExecutionPolicy Bypass -File $Script @argList 2>&1 | Out-String }
+    finally { $ErrorActionPreference = $saved }
+    $script:LastRun = $out
     return [pscustomobject]@{ Code = $LASTEXITCODE; Out = $out }
 }
 function ReadUtf8($p) { [IO.File]::ReadAllText($p, [Text.Encoding]::UTF8) }
