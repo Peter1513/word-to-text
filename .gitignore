@@ -1,0 +1,13 @@
+# your documents and generated output - never commit them
+input/
+output/
+*.docx
+*.doc
+*.rtf
+*.odt
+~$*
+
+# editor / OS
+.vscode/
+.DS_Store
+Thumbs.db

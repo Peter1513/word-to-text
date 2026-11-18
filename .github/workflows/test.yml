@@ -1,0 +1,27 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            shell: powershell   # Windows PowerShell 5.1
+          - os: windows-latest
+            shell: pwsh         # PowerShell 7
+          - os: ubuntu-latest
+            shell: pwsh
+    runs-on: ${{ matrix.os }}
+    name: ${{ matrix.os }} / ${{ matrix.shell }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Show version
+        run: ${{ matrix.shell }} -NoProfile -Command '$PSVersionTable.PSVersion.ToString()'
+      - name: Run tests
+        run: ${{ matrix.shell }} -NoProfile -ExecutionPolicy Bypass -File ./tests/Test-ExportWordText.ps1
